@@ -2,10 +2,11 @@
 
 var filter = {
     apply: function(){
-        // URL search syntax: ?type=value[+value]*&breed=value[+value]&sort=value*
+        // URL search syntax: ?q=value&type=value[+value]*&breed=value[+value]&sort=value*
         var types = [];
         var breeds = [];
         var filter_parameters = '?';
+        var search_query = document.getElementById('search').value;
         var type_url = '';
         var breed_url = '';
 
@@ -19,29 +20,31 @@ var filter = {
             breeds.push($(this).attr('data-breed'));
         });
 
+        // Check if there is search query
+        if(search_query){
+            filter_parameters += 'q=' + search_query;
+        }
+
         // Join type filter values by '+' and append to filter_parameters
         if(types.length > 0){
             type_url = 'type=';
             type_url += types.join('+');
-            filter_parameters += type_url;
+            filter_parameters += (filter_parameters.length > 1) ? '&'+type_url : type_url;
         }
 
         // Join breed filter values by '+' and append to filter_parameters
         if(breeds.length > 0){
             breed_url = 'breed=';
             breed_url += breeds.join('+');
-            if(types.length > 0) filter_parameters += '&'+breed_url;
-            else filter_parameters += breed_url;
+            filter_parameters += (filter_parameters.length > 1) ? '&'+breed_url : breed_url;
         }
 
         // Append sort parameters to filter_parameters
         if($('select option:selected').val() == ""){
-            if(types.length == 0 && breeds.length == 0) filter_parameters += 'sort=none';
-            else filter_parameters += '&sort=none';
+            filter_parameters += (filter_parameters.length > 1) ? '&sort=none' : 'sort=none';
         }
         else {
-            if(types.length == 0 && breeds.length == 0) filter_parameters += 'sort='+$('select option:selected').val();
-            else filter_parameters += '&sort='+$('select option:selected').val();
+            filter_parameters += (filter_parameters.length > 1) ? '&sort='+$('select option:selected').val() : 'sort='+$('select option:selected').val();
         }
         window.location = config.viewProducts_url+filter_parameters;
 

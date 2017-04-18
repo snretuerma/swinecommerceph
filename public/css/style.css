@@ -410,6 +410,26 @@ blockquote.info{
 	width: 30rem;
 }
 
+/* Search components style */
+input#search{
+	color: black;	
+}
+
+#search-results ul{
+	margin: 0;
+	border: solid .7px;
+	border-color: rgba(0,0,0,0.3);
+}
+
+#search-results ul li{
+	padding: .5rem 0 .5rem 3rem;
+	cursor: pointer;
+}
+
+#search-results li:hover{
+	background-color: rgba(0,0,0,0.1);
+}
+
 /*
  * Device-specific styles
  */
@@ -1011,7 +1031,7 @@ blockquote.info{
 }
 
 #map-canvas{
-	height: 60vh;
+	height: 80vh;
 }
 
 /* Product Breakdown */

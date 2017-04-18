@@ -23,30 +23,33 @@
 
 @section('content')
 
-    <form id="map-params" action="breeders" method="post">
-        <p>
-          <input type="checkbox" class="filled-in cb-type" id="cb-gilt" name="gilt" {{ (isset($_POST['gilt']) || !isset($_POST['_token']))?'checked="checked"':''}}/>
-          <label for="cb-gilt">Gilt</label>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <input type="checkbox" class="filled-in cb-type" id="cb-sow" name="sow" {{ (isset($_POST['sow']) || !isset($_POST['_token']))?'checked="checked"':''}}/>
-          <label for="cb-sow">Sow</label>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <input type="checkbox" class="filled-in cb-type" id="cb-boar" name="boar" {{ (isset($_POST['boar']) || !isset($_POST['_token']))?'checked="checked"':''}}/>
-          <label for="cb-boar">Boar</label>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <input type="checkbox" class="filled-in cb-type" id="cb-semen" name="semen" {{ (isset($_POST['semen']) || !isset($_POST['_token']))?'checked="checked"':''}}/>
-          <label for="cb-semen">Semen</label>
+    <div class="row">
+        <form class="col s1" id="map-params" action="breeders" method="post">
+            <p>
+              <input type="checkbox" class="filled-in cb-type" id="cb-gilt" name="gilt" {{ (isset($_POST['gilt']) || !isset($_POST['_token']))?'checked="checked"':''}}/>
+              <label for="cb-gilt">Gilt</label>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              <input type="checkbox" class="filled-in cb-type" id="cb-sow" name="sow" {{ (isset($_POST['sow']) || !isset($_POST['_token']))?'checked="checked"':''}}/>
+              <label for="cb-sow">Sow</label>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              <input type="checkbox" class="filled-in cb-type" id="cb-boar" name="boar" {{ (isset($_POST['boar']) || !isset($_POST['_token']))?'checked="checked"':''}}/>
+              <label for="cb-boar">Boar</label>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              <input type="checkbox" class="filled-in cb-type" id="cb-semen" name="semen" {{ (isset($_POST['semen']) || !isset($_POST['_token']))?'checked="checked"':''}}/>
+              <label for="cb-semen">Semen</label>
+            </p>
+            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+            <br/>
+        </form>
 
-        </p>
-        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-        <br/>
-    </form>
-
-    <div class="progress geocoding" style="display:none;">
-      <div class="indeterminate"></div>
-    </div>
-    <div id="map-container">
-        <div id="map-canvas"></div>
+        <div class="col s11">
+            <div class="progress geocoding" style="display:none;">
+              <div class="indeterminate"></div>
+            </div>
+            <div id="map-container">
+                <div id="map-canvas" style="height:70vh;"></div>
+            </div>
+        </div>
     </div>
     
    
@@ -57,28 +60,10 @@
 @section('customScript')
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjcVoiwU44Pj1fdY8JyxjORa8RElQQlGY"></script>
+    <script src="/js/markerclusterer.js"></script>
     <script src="/js/Mapster.js"></script>
     <script src="/js/map-options.js"></script>
-    <script type="text/javascript">
-        function testajax(url, params) {
-    var f = $("<form target='_blank' method='POST' style='display:none;'></form>").attr({
-        action: url
-    }).appendTo(document.body);
-
-    for (var i in params) {
-        if (params.hasOwnProperty(i)) {
-            $('<input type="hidden" />').attr({
-                name: i,
-                value: params[i]
-            }).appendTo(f);
-        }
-    }
-
-    f.submit();
-
-    f.remove();
-}
-    </script>
+   
     <script>
         (function(window, google, mapster){
 
@@ -120,7 +105,10 @@
             map = new Mapster.create(element, options);
             map.zoom(6);
 
+            var loadingtimeout;
             function geocode(opts){
+                clearTimeout(loadingtimeout);
+                $('.geocoding').show();
                 geocoder.geocode({
                     address: opts.address
                 }, function(results, status){
@@ -131,9 +119,12 @@
                             lng : result.geometry.location.lng(), 
                             draggable : true,
                             content: opts.content,
-                            icon: '/images/pigmarker.png'
+                            icon: '/images/maps/breeder.png',
+                            link: '/customer/view-breeder/'+opts.id
                         });
-
+                        loadingtimeout = setTimeout(function(){
+                            $('.geocoding').hide();
+                        }, 500);
                     }
                     else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {    
                         setTimeout(function() {
@@ -144,18 +135,15 @@
                     }
                 });
             }
-
            
             @foreach($breeders as $breeder)
                 geocode({
                     address : '{{ $breeder->officeAddress_province }}, Philippines',
-                    content : '{{ $breeder->users()->first()->name }}'
+                    content : '{{ $breeder->users()->first()->name }}',
+                    id : '{{ $breeder->id }}'
                 });
             @endforeach
-
-           
-
-
+            
         }(window, google, window.Mapster || (window.Mapster = {})))
     </script>
     

@@ -9,10 +9,10 @@ use Storage;
 
 class ServeResizedImageController extends Controller
 {
-    private const PRODUCT_IMG_PATH = '/images/product/';
-    private const PRODUCT_SIMG_PATH = '/images/product/resize/small/';
-    private const PRODUCT_MIMG_PATH = '/images/product/resize/medium/';
-    private const PRODUCT_LIMG_PATH = '/images/product/resize/large/';
+    const PRODUCT_IMG_PATH = '/images/product/';
+    const PRODUCT_SIMG_PATH = '/images/product/resize/small/';
+    const PRODUCT_MIMG_PATH = '/images/product/resize/medium/';
+    const PRODUCT_LIMG_PATH = '/images/product/resize/large/';
 
     /**
      * Serve the appropriate image on the client

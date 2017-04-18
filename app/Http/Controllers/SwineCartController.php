@@ -21,6 +21,7 @@ use App\Models\ProductReservation;
 use Auth;
 use App\Notifications\BreederRated;
 use App\Notifications\ProductRequested;
+use App\Jobs\AddToTransactionLog;
 
 class SwineCartController extends Controller
 {
@@ -163,27 +164,29 @@ class SwineCartController extends Controller
             $product->status = "requested";
             $product->save();
 
-            // Add new Transaction Log
-            // This must be put in an event for better performance
-            $transactionLog = new TransactionLog;
-            $transactionLog->customer_id = $requested->customer_id;
-            $transactionLog->breeder_id = $product->breeder_id;
-            $transactionLog->product_id = $product->id;
-            $transactionLog->status = "requested";
-            $transactionLog->created_at = Carbon::now();
-            $requested->transactionLogs()->save($transactionLog);
+            $transactionDetails = [
+                'swineCart_id' => $requested->id,
+                'customer_id' => $requested->customer_id,
+                'breeder_id' => $product->breeder_id,
+                'product_id' => $product->id,
+                'status' => 'requested',
+                'created_at' => Carbon::now()
+            ];
+
+            // Add new Transaction Log. Queue AddToTransactionLog job
+            dispatch(new AddToTransactionLog($transactionDetails));
 
             // Notify Breeder of the request
             $breederUser = Breeder::find($product->breeder_id)->users()->first();
             $breederUser->notify(new ProductRequested(
                 [
                     'description' => 'Product <b>' . $product->name . '</b> is <b>requested</b> by <b>' . $this->user->name . '</b>',
-                    'time' => $transactionLog->created_at,
+                    'time' => $transactionDetails['created_at'],
                     'url' => route('dashboard.productStatus')
                 ]
             ));
 
-            return [$customer->swineCartItems()->where('if_requested',0)->count(), $transactionLog->created_at];
+            return [$customer->swineCartItems()->where('if_requested',0)->count(), $transactionDetails['created_at']];
         }
     }
 
@@ -326,7 +329,8 @@ class SwineCartController extends Controller
                     "quantity" => (SwineCartItem::find($restructuredItem['logs'][0]['swineCart_id'])->quantity) ?? '',
                     "name" => $product->name,
                     "type" => $product->type,
-                    "img_path" => route('serveImage', ['size' => 'small', 'filename' => Image::find($product->primary_img_id)->name]),
+                    "s_img_path" => route('serveImage', ['size' => 'small', 'filename' => Image::find($product->primary_img_id)->name]),
+                    "l_img_path" => route('serveImage', ['size' => 'large', 'filename' => Image::find($product->primary_img_id)->name]),
                     "breed" => $this->transformBreedSyntax(Breed::find($product->breed_id)->name),
                     "breeder_name" => Breeder::find($product->breeder_id)->users()->first()->name,
                     "farm_from" => FarmAddress::find($product->farm_from_id)->province,

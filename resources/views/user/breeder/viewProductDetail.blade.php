@@ -29,7 +29,7 @@
             <div class="row">
                 <div class="card">
                     <div class="card-image">
-                        <img src="{{$product->img_path}}" data-imagezoom="true">
+                        <img src="{{$product->img_path}}" data-imagezoom="{{ $product->def_img_path }}">
                     </div>
                 </div>
             </div>

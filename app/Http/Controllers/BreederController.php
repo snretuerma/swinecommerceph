@@ -15,10 +15,17 @@ use App\Models\Breeder;
 use App\Models\Customer;
 use App\Models\FarmAddress;
 use App\Models\Product;
+<<<<<<< HEAD
 use App\Models\Image;
 use App\Models\Sessions;
+=======
+use App\Models\User;
+>>>>>>> upstream/master
 
 use Auth;
+use Mail;
+use App\Models\Image;
+
 use Storage;
 
 class BreederController extends Controller
@@ -304,7 +311,10 @@ class BreederController extends Controller
      */
     public function viewCustomers(){
         $breeder = $this->user->userable;
-        $customers = $breeder->transactionLogs()->first()->customer()->get();
+
+        $temp = $breeder->transactionLogs()->first();
+
+        $customers = ($temp==NULL)? []: $temp->customer()->get();
 
         return view('user.breeder.viewCustomers', compact('customers'));
     }

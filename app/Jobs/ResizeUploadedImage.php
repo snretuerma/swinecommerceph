@@ -8,21 +8,23 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 use ImageManipulator;
+use Storage;
 
 class ResizeUploadedImage implements ShouldQueue
 {
     use InteractsWithQueue, Queueable, SerializesModels;
 
-    private const PRODUCT_IMG_PATH = '/images/product/';
-    private const PRODUCT_SIMG_PATH = '/images/product/resize/small/';
-    private const PRODUCT_MIMG_PATH = '/images/product/resize/medium/';
-    private const PRODUCT_LIMG_PATH = '/images/product/resize/large/';
+    const PRODUCT_IMG_PATH = '/images/product/';
+    const PRODUCT_SIMG_PATH = '/images/product/resize/small/';
+    const PRODUCT_MIMG_PATH = '/images/product/resize/medium/';
+    const PRODUCT_LIMG_PATH = '/images/product/resize/large/';
 
     protected $filename;
 
     /**
      * Create a new job instance.
      *
+     * @param  String   filename
      * @return void
      */
     public function __construct($filename)
@@ -53,6 +55,11 @@ class ResizeUploadedImage implements ShouldQueue
                     $constraint->upsize();
                 });
 
+                // Make directory if it does not exist
+                if(!Storage::disk('public')->exists(self::PRODUCT_SIMG_PATH)){
+                    Storage::disk('public')->makeDirectory(self::PRODUCT_SIMG_PATH);
+                }
+
                 $smallImage->save(public_path() . self::PRODUCT_SIMG_PATH . $this->filename);
             }
             else break;
@@ -62,6 +69,11 @@ class ResizeUploadedImage implements ShouldQueue
                     $constraint->upsize();
                 });
 
+                // Make directory if it does not exist
+                if(!Storage::disk('public')->exists(self::PRODUCT_MIMG_PATH)){
+                    Storage::disk('public')->makeDirectory(self::PRODUCT_MIMG_PATH);
+                }
+
                 $mediumImage->save(public_path() . self::PRODUCT_MIMG_PATH . $this->filename, 80);
             }
             else break;
@@ -70,6 +82,11 @@ class ResizeUploadedImage implements ShouldQueue
                 $largeImage =  ImageManipulator::make($absoluteFilePath)->heighten(410, function($constraint){
                     $constraint->upsize();
                 });
+
+                // Make directory if it does not exist
+                if(!Storage::disk('public')->exists(self::PRODUCT_LIMG_PATH)){
+                    Storage::disk('public')->makeDirectory(self::PRODUCT_LIMG_PATH);
+                }
 
                 $largeImage->save(public_path() . self::PRODUCT_LIMG_PATH . $this->filename, 80);
             }

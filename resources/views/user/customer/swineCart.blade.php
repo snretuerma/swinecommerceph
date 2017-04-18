@@ -623,7 +623,7 @@
                     >
                         <div class="row swine-cart-item valign-wrapper">
                             <div class="col s2 center-align">
-                                <a href="#"><img :src="item.product_details.img_path" width="75" height="75" class="circle"></a>
+                                <a href="#"><img :src="item.product_details.s_img_path" width="75" height="75" class="circle"></a>
                             </div>
                             <div class="col s3 verticalLine valign-wrapper">
                                 <div class="valign">

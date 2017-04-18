@@ -540,7 +540,7 @@ Vue.component('transaction-history',{
     },
     methods: {
         viewProductModalFromHistory: function(index){
-            vm.productInfoModal.imgPath = this.history[index].product_details.img_path;
+            vm.productInfoModal.imgPath = this.history[index].product_details.l_img_path;
             vm.productInfoModal.name = this.history[index].product_details.name;
             vm.productInfoModal.breeder = this.history[index].product_details.breeder_name;
             vm.productInfoModal.province = this.history[index].product_details.farm_from;

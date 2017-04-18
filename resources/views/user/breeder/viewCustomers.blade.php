@@ -22,12 +22,8 @@
 @endsection
 
 @section('content')
-
-
-
-
     <div id="map-container">
-    <div id="map-canvas"></div>
+    <div id="map-canvas" style="height:80vh;"></div>
   </div>
 
 
@@ -38,6 +34,7 @@
 @section('customScript')
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjcVoiwU44Pj1fdY8JyxjORa8RElQQlGY"></script>
+    <script src="/js/markerclusterer.js"></script>
     <script src="/js/Mapster.js"></script>
     <script src="/js/map-options.js"></script>
     <script>
@@ -50,7 +47,10 @@
             var geocoder = new google.maps.Geocoder();
             map = new Mapster.create(element, options);
 
+            var loadingtimeout;
             function geocode(opts){
+                clearTimeout(loadingtimeout);
+                $('.geocoding').show();
                 geocoder.geocode({
                     address: opts.address
                 }, function(results, status){
@@ -61,8 +61,12 @@
                             lng : result.geometry.location.lng(),
                             draggable : true,
                             content: opts.content,
-                            icon: '/images/pigmarker.png'
+                            icon: '/images/maps/customer.png',
+                            //link: '/breeder/view-customer/'+opts.id
                         });
+                        loadingtimeout = setTimeout(function(){
+                            $('.geocoding').hide();
+                        }, 500);
 
                     }else{
                         console.error(status);
@@ -73,7 +77,8 @@
             @foreach($customers as $customer)
                 geocode({
                     address : '{{ $customer->address_province }}, Philippines',
-                    content : '{{ $customer->users()->first()->name }}'
+                    content : '{{ $customer->users()->first()->name }}',
+                    id : '{{ $customer->id }}'
                 });
             @endforeach
 

@@ -29,13 +29,17 @@
             </div>
             <form>
                 <div class="input-field">
-                    <input id="search" type="search" placeholder="Search for a product" required>
+                    <input id="search" type="search" name="q" placeholder="Search for a product" value="{{ request('q') }}" autocomplete="off">
                     <label class="label-icon" for="search"><i class="material-icons teal-text">search</i></label>
                     <i class="material-icons">close</i>
                 </div>
             </form>
         </div>
     </nav>
+
+    <div id="search-results" class="z-depth-2" style="display:none; position:absolute; background-color:white; z-index:9999;">
+        <ul></ul>
+    </div>
 
     <div class="row" style="padding-top:1rem;">
         {{-- Chips --}}
@@ -147,8 +151,7 @@
 
             <div class="row">
 
-            <?php $counter = 1; ?>
-            @foreach($products as $product)
+            @forelse($products as $product)
                 {{-- Card --}}
                 <div class="col s12 m6 l6 ">
                   <div class="card hoverable">
@@ -230,14 +233,12 @@
                     </div>
                   </div>
                 </div>
-                <?php $counter++; ?>
-            @endforeach
 
-            @if($counter == 1)
+            @empty
                 <div class="col s12">
                     No results found.
                 </div>
-            @endif
+            @endforelse
             </div>
 
             {{-- Pagination --}}
@@ -253,6 +254,7 @@
 @endsection
 
 @section('customScript')
+    <script src="/js/vendor/elasticsearch.jquery.min.js"></script>
     <script src="/js/customer/filter.js"> </script>
     <script src="/js/customer/viewProducts_script.js"> </script>
 @endsection
