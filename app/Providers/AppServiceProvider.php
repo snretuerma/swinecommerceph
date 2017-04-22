@@ -61,38 +61,43 @@ class AppServiceProvider extends ServiceProvider
      */
     private function bindSearchClient()
     {
-        $client = ClientBuilder::create()
-            ->setHosts(config('services.search.hosts'))
-            ->build();
+        // Check first if Elasticsearch is enabled
+        if(config('services.search.enabled')){
 
-        $indexParameters['index'] = 'swinecart';
+            $client = ClientBuilder::create()
+                ->setHosts(config('services.search.hosts'))
+                ->build();
 
-        // Check if swinecart index is not yet existing
-        if (!$client->indices()->exists($indexParameters)){
-            
-            // Setup mapping for the suggester
-            $parameters = [
-                'index' => 'swinecart',
-                'body' => [
-                    'mappings' => [
-                        'products' => [
-                            'properties' => [
+            $indexParameters['index'] = 'swinecart';
 
-                                'suggest' => [
-                                    'type' => 'completion'
+            // Check if swinecart index is not yet existing
+            if (!$client->indices()->exists($indexParameters)){
+
+                // Setup mapping for the suggester
+                $parameters = [
+                    'index' => 'swinecart',
+                    'body' => [
+                        'mappings' => [
+                            'products' => [
+                                'properties' => [
+
+                                    'suggest' => [
+                                        'type' => 'completion'
+                                    ]
+
                                 ]
-
                             ]
                         ]
                     ]
-                ]
-            ];
+                ];
 
-            $response = $client->indices()->create($parameters);
+                $response = $client->indices()->create($parameters);
+            }
+
+            $this->app->bind(Client::class, function($app)use($client){
+                return $client;
+            });
+
         }
-
-        $this->app->bind(Client::class, function($app)use($client){
-            return $client;
-        });
     }
 }

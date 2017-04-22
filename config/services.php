@@ -37,7 +37,13 @@ return [
 
     'search' => [
         'enabled' => env('SEARCH_ENABLED', false),
-        'hosts' => explode(',', env('SEARCH_HOSTS'))
+        'hosts'   => explode(',', env('SEARCH_HOSTS'))
+    ],
+
+    'chikka' => [
+        'id'     => env('CHIKKA_ID'),
+        'secret'    => env('CHIKKA_SECRET'),
+        'url'    => env('CHIKKA_URL')
     ],
 
 ];

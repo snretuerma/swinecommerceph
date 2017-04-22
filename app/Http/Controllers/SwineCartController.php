@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
 
+use App\Jobs\AddToTransactionLog;
+use App\Jobs\SendSMS;
 use App\Http\Requests;
 use App\Models\Customer;
 use App\Models\Breeder;
@@ -17,14 +19,20 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\TransactionLog;
 use App\Models\ProductReservation;
-
-use Auth;
 use App\Notifications\BreederRated;
 use App\Notifications\ProductRequested;
-use App\Jobs\AddToTransactionLog;
+use App\Repositories\CustomHelpers;
+
+use Auth;
 
 class SwineCartController extends Controller
 {
+    use CustomHelpers {
+        transformBreedSyntax as private;
+        transformDateSyntax as private;
+        computeAge as private;
+    }
+    
     protected $user;
 
     /**
@@ -114,25 +122,36 @@ class SwineCartController extends Controller
             $reviewed->save();
             $reviews->save($review);
 
-            // Add new Transaction Log
-            // This must be put in an event for better performance
-            $transactionLog = new TransactionLog;
-            $transactionLog->customer_id = $request->customerId;
-            $transactionLog->breeder_id = $request->breederId;
-            $transactionLog->product_id = $request->productId;
-            $transactionLog->status = "rated";
-            $transactionLog->created_at = Carbon::now();
-            $reviewed->transactionLogs()->save($transactionLog);
+            $breeder = Breeder::find($request->breederId);
+
+            $transactionDetails = [
+                'swineCart_id' => $reviewed->id,
+                'customer_id' => $request->customerId,
+                'breeder_id' => $request->breederId,
+                'product_id' => $request->productId,
+                'status' => 'rated',
+                'created_at' => Carbon::now()
+            ];
+
+            $notificationDetails = [
+                'description' => 'Customer <b>' . $this->user->name . ' rated</b> you with ' . round(($review->rating_delivery + $review->rating_transaction + $review->rating_productQuality)/3, 2) . ' (overall average).',
+                'time' => $transactionDetails['created_at'],
+                'url' => route('dashboard')
+            ];
+
+            $smsDetails = [
+                'message' => 'SwineCart ['. $this->transformDateSyntax($transactionDetails['created_at'], 1) .']: Customer ' . $this->user->name . ' rated you with ' . round(($review->rating_delivery + $review->rating_transaction + $review->rating_productQuality)/3, 2) . ' (overall average).',
+                'recepient' => $breeder->office_mobile
+            ];
+
+            // Add new Transaction Log. Queue AddToTransactionLog job
+            dispatch(new AddToTransactionLog($transactionDetails));
+            // Queue SendSMS job
+            dispatch(new SendSMS($smsDetails['message'], $smsDetails['recepient']));
 
             // Notify Breeder of the rating
-            $breederUser = Breeder::find($request->breederId)->users()->first();
-            $breederUser->notify(new BreederRated(
-                [
-                    'description' => 'Customer <b>' . $this->user->name . ' rated</b> you',
-                    'time' => $transactionLog->created_at,
-                    'url' => route('dashboard')
-                ]
-            ));
+            $breederUser = $breeder->users()->first();
+            $breederUser->notify(new BreederRated($notificationDetails));
 
             return "OK";
         }
@@ -164,6 +183,8 @@ class SwineCartController extends Controller
             $product->status = "requested";
             $product->save();
 
+            $breeder = Breeder::find($product->breeder_id);
+
             $transactionDetails = [
                 'swineCart_id' => $requested->id,
                 'customer_id' => $requested->customer_id,
@@ -173,18 +194,25 @@ class SwineCartController extends Controller
                 'created_at' => Carbon::now()
             ];
 
+            $notificationDetails = [
+                'description' => '<b>' . $this->user->name . '</b> requested for Product <b>' . $product->name . '</b>.',
+                'time' => $transactionDetails['created_at'],
+                'url' => route('dashboard.productStatus')
+            ];
+
+            $smsDetails = [
+                'message' => 'SwineCart ['. $this->transformDateSyntax($transactionDetails['created_at'], 1) .']: ' . $this->user->name . ' requested for Product ' . $product->name . '.',
+                'recepient' => $breeder->office_mobile
+            ];
+
             // Add new Transaction Log. Queue AddToTransactionLog job
             dispatch(new AddToTransactionLog($transactionDetails));
+            // Queue SendSMS job
+            dispatch(new SendSMS($smsDetails['message'], $smsDetails['recepient']));
 
             // Notify Breeder of the request
-            $breederUser = Breeder::find($product->breeder_id)->users()->first();
-            $breederUser->notify(new ProductRequested(
-                [
-                    'description' => 'Product <b>' . $product->name . '</b> is <b>requested</b> by <b>' . $this->user->name . '</b>',
-                    'time' => $transactionDetails['created_at'],
-                    'url' => route('dashboard.productStatus')
-                ]
-            ));
+            $breederUser = $breeder->users()->first();
+            $breederUser->notify(new ProductRequested($notificationDetails));
 
             return [$customer->swineCartItems()->where('if_requested',0)->count(), $transactionDetails['created_at']];
         }
@@ -364,46 +392,6 @@ class SwineCartController extends Controller
             $customer = $this->user->userable;
             return $customer->swineCartItems()->where('if_requested',0)->count();
         }
-    }
-
-    /**
-    * Parse $breed if it contains '+' (ex. landrace+duroc)
-    * to "Landrace x Duroc"
-    *
-    * @param  String   $breed
-    * @return String
-    */
-    private function transformBreedSyntax($breed)
-    {
-       if(str_contains($breed,'+')){
-           $part = explode("+", $breed);
-           $breed = ucfirst($part[0])." x ".ucfirst($part[1]);
-           return $breed;
-       }
-       return ucfirst($breed);
-    }
-
-    /**
-     * Compute age (in days) of product with the use of its birthdate
-     *
-     * @param  String   $birthdate
-     * @return Integer
-     */
-    private function computeAge($birthdate)
-    {
-        $rawSeconds = time() - strtotime($birthdate);
-        $age = ((($rawSeconds/60)/60))/24;
-        return floor($age);
-    }
-
-    /**
-     * Transform birthdate original (YYYY-MM-DD) syntax to Month Day, Year
-     * @param  String   $birthdate
-     * @return String
-     */
-    private function transformDateSyntax($birthdate)
-    {
-        return date_format(date_create($birthdate), 'F j, Y');
     }
 
 }

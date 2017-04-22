@@ -11,6 +11,7 @@
 * jQuery v2.1
 * Materialize CSS v0.98
 * Elasticsearch v5.2
+* Chikka SMS API
 
 ### Configured Laradock environment can be found at:
 
