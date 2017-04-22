@@ -7,12 +7,13 @@ use App\Models\Image;
 use App\Models\Video;
 use App\Models\TransactionLog;
 use App\Models\ProductReservation;
+use App\Observers\Searchable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Searchable;
 
     public $timestamps = false;
 

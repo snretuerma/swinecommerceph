@@ -4,6 +4,7 @@
 		function Mapster(element, opts) {
 			this.gMap = new google.maps.Map(element, opts);
 			this.markers = [];
+			this.markerClusterer = new MarkerClusterer(this.gMap, []);
 		}
 		Mapster.prototype = {
 			zoom : function(level){
@@ -32,11 +33,15 @@
 			addMarker : function(opts){
 				var marker;
 				var infoWindow;
+
+				//add cristian's algorithm here
+
 				opts.position = {
 					lat : opts.lat,
 					lng : opts.lng
 				};
 				marker = this._createMarker(opts);
+				this.markerClusterer.addMarker(marker);
 				this._addMarker(marker);
 				if(opts.event) {
 					this._on({
@@ -45,6 +50,18 @@
 						callback : opts.event.callback
 					});
 				}
+
+
+				if(opts.link){
+					this._on({
+						obj : marker,
+						event :  'click',
+						callback : function(e){
+							window.location = opts.link;
+						}
+					});
+				}
+
 				if(opts.content){
 					this._on({
 						obj : marker,
@@ -62,7 +79,6 @@
 						obj : marker,
 						event :  'mouseout',
 						callback : function(e){
-							
 							infoWindow.close(map.gMap, marker);
 						}
 					});

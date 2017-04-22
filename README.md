@@ -6,7 +6,12 @@
 
 * Laravel v5.3
 * Ratchet
-* ZeroMQ / needs php-zmq
+* ZeroMQ / needs php-zmq extension
 * VueJS v2
 * jQuery v2.1
 * Materialize CSS v0.98
+* Elasticsearch v5.2
+
+### Configured Laradock environment can be found at:
+
+* https://github.com/evantolorio/laradock.git

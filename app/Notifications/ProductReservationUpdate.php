@@ -7,7 +7,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class ProductReservationUpdate extends Notification
+class ProductReservationUpdate extends Notification implements ShouldQueue
 {
     use Queueable;
 

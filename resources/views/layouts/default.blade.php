@@ -79,7 +79,7 @@
 			</div>
 
 			{{-- Search Field --}}
-			<div id="search-field" class="nav-wrapper white z-depth-1" style="display:none;">
+			{{-- <div id="search-field" class="nav-wrapper white z-depth-1" style="display:none;">
 	            <div style="height:1px;">
 	            </div>
 	            <form>
@@ -89,7 +89,7 @@
 	                    <i class="material-icons">close</i>
 	                </div>
 	            </form>
-	        </div>
+	        </div> --}}
 
 		</nav>
 	</div>

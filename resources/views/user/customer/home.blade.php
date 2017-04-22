@@ -194,15 +194,21 @@
     {{-- Search bar --}}
     <nav id="search-container">
         <div id="search-field" class="nav-wrapper white">
+            <div style="height:1px;">
+            </div>
             <form>
                 <div class="input-field">
-                    <input id="search" type="search" placeholder="Search for a product" required>
+                    <input id="search" type="search" name="q" placeholder="Search for a product" value="{{ request('q') }}" autocomplete="off">
                     <label class="label-icon" for="search"><i class="material-icons teal-text">search</i></label>
                     <i class="material-icons">close</i>
                 </div>
             </form>
         </div>
     </nav>
+
+    <div id="search-results" class="z-depth-2" style="display:none; position:absolute; background-color:white; z-index:9999;">
+        <ul></ul>
+    </div>
 
     <div class="row">
     </div>
@@ -241,4 +247,107 @@
     <script src="/js/vendor/moment.min.js"></script>
     <script src="/js/customer/swinecart.js"> </script>
     <script src="/js/customer/customer_custom.js"> </script>
+@endsection
+
+@section('customScript')
+    <script src="/js/vendor/elasticsearch.jquery.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function(){
+
+            // Setup Elasticsearch
+            var client = new $.es.Client({
+                hosts: 'http://localhost:9200'
+            });
+
+            document.querySelector('#search-results').style.width = document.querySelector('#search-field').offsetWidth+'px';
+
+            $("input#search").keydown(function(e){
+                // Perform GET request upon pressing the Enter key
+                // or fetch suggestions from Elastic search
+                // and output it on search results
+                if(e.which == 13) {
+                    e.preventDefault();
+                    filter.apply();
+                }
+                else{
+                    setTimeout(function(){
+                        searchPhrase = document.querySelector('input#search').value;
+
+                        // Execute of searchPhrase is not empty
+                        if(searchPhrase){
+
+                            // Query on Elasticsearch search engine
+                            client.search({
+                                index: 'swinecart',
+                                type: 'products',
+                                body:{
+                                    "_source": "output",
+                                    "suggest": {
+                                        "productSuggest": {
+                                            "prefix": searchPhrase,
+                                            "completion": {
+                                                "field": "suggest",
+                                                "fuzzy": {
+                                                	"fuzziness": 2
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }).then(function(response){
+                                var options = response.suggest.productSuggest[0].options;
+                                var searchResultsTop = '';
+                                var searchResultsBot = '';
+
+                                if(options.length > 0){
+
+                                    for (var i = 0; i < 3; i++) {
+                                        searchResultsTop += '<li class="search-item">' +
+                                            options[i]._source.output[1] +
+                                            '</li>';
+
+                                        searchResultsBot += '<li class="search-item">' +
+                                            options[i]._source.output[0] +
+                                            '</li>';
+                                    }
+
+                                    document.querySelector("#search-results ul").innerHTML = searchResultsTop + searchResultsBot;
+
+                                    $("#search-results").show();
+                                }
+
+                            }, function(error){
+                                console.trace(error.message);
+                            });
+                        }
+
+                        else $("#search-results").hide();
+
+                    }, 0);
+
+                }
+            });
+
+            $('body').on('click', 'li.search-item', function(e){
+                e.preventDefault();
+
+                var searchInput = document.querySelector('input#search');
+                searchInput.value = $(this).html();
+
+                $("#search-results").hide();
+
+                // Setup search query parameter
+                var filter_parameters = '?';
+                var search_query = document.getElementById('search').value;
+
+                // Check if there is search query
+                if(search_query){
+                    filter_parameters += 'q=' + search_query + '&sort=none';
+                }
+
+                // Redirect to view products page with designated search query parameter
+                window.location = config.viewProducts_url+filter_parameters;
+            });
+        });
+    </script>
 @endsection
